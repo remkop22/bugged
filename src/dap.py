@@ -1,6 +1,8 @@
 from typing import Literal, Any, Optional, Tuple
 import json
 
+seq_count = 0
+
 class Message:
 
     def __init__(self, **kwargs):
@@ -33,7 +35,9 @@ class ProtocolMessage(Message):
 
     def __init__(self, type: Literal['request', 'response', 'event'], **kwargs):
         super().__init__(**kwargs)
-        self.seq: int = 0
+        global seq_count
+        self.seq: int = seq_count
+        seq_count += 1
         self.type = type
 
 class Request(ProtocolMessage):

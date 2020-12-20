@@ -1,4 +1,5 @@
 import asyncio
+from threading import Thread
 from typing import Tuple, Optional, Any
 from clients import Client
 from sockets import MessagingSocketClient
@@ -19,17 +20,17 @@ class MessageHandler:
 
         for prop in dir(instance):
             if hasattr(getattr(instance, prop), 'type'):
-                func = getattr(instance, prop)
-                if func.type == 'request':
-                    lb = lambda x: func.command is None or func.command == x['command']
-                    self._request_handlers.append((lb, func))
-                elif func.type == 'event':
-                    lb = lambda x: func.event is None or func.evnet == x['event']
-                    self._event_handlers.append((lb, func))
-                elif func.type == 'response':
-                    lb = lambda x: (func.command is None or func.command == x['command']) \
-                        and (func.success is None or func.success == x['success'])
-                    self._response_handlers.append((lb, func))
+                func_match = getattr(instance, prop)
+                if func_match.type == 'request':
+                    lb = lambda m, f: f.command is None or f.command == m['command']
+                    self._request_handlers.append((lb, func_match))
+                elif func_match.type == 'event':
+                    lb = lambda m, f: f.event is None or f.event == m['event']
+                    self._event_handlers.append((lb, func_match))
+                elif func_match.type == 'response':
+                    lb = lambda m, f: (f.command is None or f.command == m['command']) \
+                        and (f.success is None or f.success == m['success'])
+                    self._response_handlers.append((lb, func_match))
 
     def handle(self, headers, message):
         handlers = None
@@ -45,43 +46,52 @@ class MessageHandler:
             else:
                 raise Exception(f'unkown message: "{message}"')
 
-        for conditional, handler in handlers:
-            if conditional(message):
+        handled = False
+        for conditional, handler in reversed(handlers):
+            if conditional(message, handler):
                 try:
                     handler(message)
-                    return
+                    handled = True
+                    if not handler.propogate:
+                        return
                 except CantHandle:
                     pass
-        print(f'warning message was not handled: {message}')
+        if not handled:
+            print(f'warning message was not handled: {message}')
 
     @staticmethod
-    def request(command:str = None):
+    def request(command:str = None, propogate=False):
         def decorator(func):
-            def wrapper(self, message, *args, **kwargs):
-                func(self, message, *args, **kwargs)
+            def wrapper(message, *args, **kwargs):
+                func(message, *args, **kwargs)
             wrapper.type = 'request'
             wrapper.command = command
+            wrapper.propogate = propogate
             return wrapper
+            return wrapper2
         return decorator
 
     @staticmethod
-    def event(event:str = None):
+    def event(event:str = None, propogate=False):
         def decorator(func):
             def wrapper(self, message, *args, **kwargs):
                 func(self, message, *args, **kwargs)
             wrapper.type = 'event'
             wrapper.event = event
+            wrapper.propogate = propogate
             return wrapper
         return decorator
 
+
     @staticmethod
-    def response(command:str = None, success:bool = None):
+    def response(command:str = None, success:bool = None, propogate=False):
         def decorator(func):
             def wrapper(self, message, *args, **kwargs):
                 func(self, message, *args, **kwargs)
             wrapper.type = 'response'
             wrapper.command = command
             wrapper.success = success
+            wrapper.propogate = propogate
             return wrapper
         return decorator
 
@@ -93,6 +103,12 @@ class AdapterBase:
         self.socket_client = MessagingSocketClient(address, self._handle_message)
         self.debug_client = None
         self.message_handler = MessageHandler(self)
+        self.thread = None
+
+    def start(self):
+        self.thread = Thread(target=self.connect)
+        self.thread.start()
+        self.socket_client.connected.wait()
 
     def connect(self):
         asyncio.run(self.socket_client.start())
@@ -103,5 +119,25 @@ class AdapterBase:
 
     def handle_message(self, message):
         pass
+
+    def send(self, message, success_callback=None, error_callback=None, propogate=False):
+        if success_callback or error_callback:
+            if message.type != 'request':
+                raise Exception('event or response does not accept callbacks')
+
+            def wrapper(message, *args, **kwargs):
+                if (error_callback is None or message["success"]) and success_callback:
+                    success_callback(message, *args, **kwargs)
+                elif not message["success"]:
+                    error_callback(message, *args, **kwargs)
+
+            wrapper.type = 'response'
+            wrapper.command = None
+            wrapper.success = None
+            wrapper.propogate = propogate
+            wrapper.seq = message.seq
+            self.message_handler._response_handlers.append((lambda m, f: f.seq == m["request_seq"], wrapper))
+        self.socket_client.send(message)
+
 
 

@@ -1,6 +1,6 @@
 from asyncio import open_connection
 import asyncio
-from threading import Thread
+from threading import Event
 from typing import Tuple, List
 import json
 
@@ -11,6 +11,7 @@ class MessagingSocketClient():
         self.message_handler = message_handler
         self.is_running = False
         self.is_reading = False
+        self.connected = Event()
 
     async def start(self):
         await self.connect()
@@ -18,6 +19,7 @@ class MessagingSocketClient():
 
     async def run(self):
         self.is_running = True
+        self.connected.set()
         while self.is_running:
             await self.read()
 
@@ -25,8 +27,9 @@ class MessagingSocketClient():
         self.reader, self.writer = await open_connection(self.host, self.port)
 
     def send(self, message):
-        encoded = message.header.encode('ascii') + message.content.encode('utf-8')
-        self.writer.write(encoded)
+        if self.writer:
+            encoded = message.header.encode('ascii') + message.content.encode('utf-8')
+            self.writer.write(encoded)
 
     async def read(self):
         self.is_reading = True
