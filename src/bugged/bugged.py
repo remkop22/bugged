@@ -1,12 +1,13 @@
-from bugged.base.adapter import AdapterBase, MessageHandler
-from bugged.base.clients import Client, Process
+from bugged.base import AdapterBase, MessageHandler
+from bugged.base import ClientBase, Process
+
 from typing import Tuple
 from bugged.dap.messages import InitializeRequest, Request, Response
 from bugged.dap.types import Scope, StackFrame, Thread
 
 class BuggedAdapter(AdapterBase):
 
-    def __init__(self, address: Tuple[str, int],  client: Client):
+    def __init__(self, address: Tuple[str, int],  client: ClientBase):
         super().__init__(address, 'bugged', client)
         self.initialized = False
         self.configured = False
@@ -106,8 +107,8 @@ class BuggedAdapter(AdapterBase):
     def raise_message(self, message):
         raise Exception(message['message'])
 
-
-client = Client('vim-bugger', 'vim-bugged', 'en-US')
-adapter = BuggedAdapter(('localhost', 5678), client)
-adapter.start()
-adapter.initialize()
+if __name__ == '__main__':
+    client = ClientBase('vim-bugger', 'vim-bugged', 'en-US')
+    adapter = BuggedAdapter(('localhost', 5678), client)
+    adapter.start()
+    adapter.initialize()

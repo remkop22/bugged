@@ -1,5 +1,4 @@
 from typing import List, Literal, Optional
-from .adapter import AdapterBase
 from bugged.dap.types import SourceBreakpoint, Thread
 
 class Process:
@@ -27,7 +26,7 @@ class Process:
             if res:
                 return res
 
-class Client:
+class ClientBase:
 
     def __init__(self, clientID: str, clientName: str, locale: str):
 
@@ -79,7 +78,7 @@ class Client:
         print("focussed thread: ", self.focussed_thread)
 
 
-class DebugClient:
+class DebugClientBase:
 
     def __init__(self):
         pass
