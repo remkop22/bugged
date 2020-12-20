@@ -1,8 +1,8 @@
 import asyncio
 from threading import Thread
 from typing import Tuple
-from clients import Client
-from sockets import MessagingSocketClient
+from bugged.base import Client
+from bugged.messaging import MessagingSocketClient
 
 class CantHandle(Exception):
 

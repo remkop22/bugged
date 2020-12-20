@@ -1,8 +1,8 @@
-from base.adapter import AdapterBase, MessageHandler
-from base.clients import Client, Process
+from bugged.base.adapter import AdapterBase, MessageHandler
+from bugged.base.clients import Client, Process
 from typing import Tuple
-from dap.messages import InitializeRequest, Request, Response
-from dap.types import Scope, StackFrame, Thread
+from bugged.dap.messages import InitializeRequest, Request, Response
+from bugged.dap.types import Scope, StackFrame, Thread
 
 class BuggedAdapter(AdapterBase):
 

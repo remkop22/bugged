@@ -1,6 +1,6 @@
 from typing import List, Literal, Optional
-from adapter import AdapterBase
-from dap.types import SourceBreakpoint, StackFrame, Thread, Variable
+from bugged.base import AdapterBase
+from bugged.dap.types import SourceBreakpoint, Thread
 
 class Process:
 
