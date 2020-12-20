@@ -1,7 +1,6 @@
 from asyncio import open_connection
-import asyncio
 from threading import Event
-from typing import Tuple, List
+from typing import Tuple
 import json
 
 class MessagingSocketClient():

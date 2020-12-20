@@ -1,6 +1,6 @@
 import asyncio
 from threading import Thread
-from typing import Tuple, Optional, Any
+from typing import Tuple
 from clients import Client
 from sockets import MessagingSocketClient
 
@@ -47,13 +47,16 @@ class MessageHandler:
                 raise Exception(f'unkown message: "{message}"')
 
         handled = False
-        for conditional, handler in reversed(handlers):
+        for index, (conditional, handler) in enumerate(reversed(handlers)):
             if conditional(message, handler):
                 try:
                     handler(message)
                     handled = True
                     if not handler.propogate:
                         return
+                    if hasattr(handler, 'persist') and not handler.persist:
+                        handlers.pop(index)
+                        print('popped')
                 except CantHandle:
                     pass
         if not handled:
@@ -99,6 +102,7 @@ class AdapterBase:
 
     def __init__(self, address: Tuple[str, int], adapterID, client:Client):
         self.client = client
+        self.client.adapter = self
         self.adapterID = adapterID
         self.socket_client = MessagingSocketClient(address, self._handle_message)
         self.debug_client = None
@@ -136,6 +140,8 @@ class AdapterBase:
             wrapper.success = None
             wrapper.propogate = propogate
             wrapper.seq = message.seq
+            wrapper.persist = False
+
             self.message_handler._response_handlers.append((lambda m, f: f.seq == m["request_seq"], wrapper))
         self.socket_client.send(message)
 

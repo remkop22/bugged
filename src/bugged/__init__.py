@@ -1,0 +1,1 @@
+from .bugged import BuggedAdapter

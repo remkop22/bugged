@@ -1,5 +1,6 @@
-from typing import Literal, Any, Optional, Tuple
+from typing import Literal, Any, Optional
 import json
+from utils import without
 
 seq_count = 0
 
@@ -43,22 +44,22 @@ class ProtocolMessage(Message):
 class Request(ProtocolMessage):
 
     def __init__(self, command: str, arguments: Optional[Any] = None, **kwargs):
-        super().__init__('request', **kwargs)
+        super().__init__('request', **without(kwargs, ['type']))
         self.arguments = arguments
         self.command = command
 
 class Event(ProtocolMessage):
 
     def __init__(self, event:str, body: Optional[Any] = None, **kwargs):
-        super().__init__('event', **kwargs)
+        super().__init__('event', **without(kwargs, ['type']))
         self.event = event
         self.body = body
 
 class Response(ProtocolMessage):
 
-    def __init__(self, succes: bool, command: str, message: Optional[str], body: Optional[Any], **kwargs):
-        super().__init__('response', **kwargs)
-        self.succes = succes
+    def __init__(self, command: str,  message: Optional[str] = None, body: Optional[Any] = None, success: Optional[bool] = None, **kwargs):
+        super().__init__('response', **without(kwargs, ['type']))
+        self.success = success
         self.command = command
         self.message = message
         self.body = body
@@ -68,5 +69,5 @@ class InitializeRequest(Request):
     def __init__(self, adapter):
         super().__init__('initialize', {
             "adapterID" : adapter.adapterID,
-            **adapter.client.__dict__
+            **adapter.client.configuration
         })
