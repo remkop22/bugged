@@ -1,5 +1,5 @@
 from typing import List, Literal, Optional
-from bugged.base import AdapterBase
+from .adapter import AdapterBase
 from bugged.dap.types import SourceBreakpoint, Thread
 
 class Process:
@@ -50,7 +50,7 @@ class Client:
         self.process: Optional[Process] = None
         self.focussed_thread_id: Optional[int] = None
         self.focussed_frame_id: Optional[int] = None
-        self.adapter: Optional[AdapterBase] = None
+        self.adapter: Optional['AdapterBase'] = None
 
     @property
     def focussed_thread(self):

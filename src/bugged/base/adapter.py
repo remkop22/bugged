@@ -1,8 +1,7 @@
 import asyncio
 from threading import Thread
 from typing import Tuple
-from bugged.base import Client
-from bugged.messaging import MessagingSocketClient
+from bugged.messaging.socket import MessagingSocketClient
 
 class CantHandle(Exception):
 
@@ -100,7 +99,7 @@ class MessageHandler:
 
 class AdapterBase:
 
-    def __init__(self, address: Tuple[str, int], adapterID, client:Client):
+    def __init__(self, address: Tuple[str, int], adapterID, client:'Client'):
         self.client = client
         self.client.adapter = self
         self.adapterID = adapterID
