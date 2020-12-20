@@ -1,7 +1,7 @@
-from asyncio import open_connection, run
+from asyncio import open_connection
 import asyncio
-from typing import Tuple, List
 from threading import Thread
+from typing import Tuple, List
 import json
 
 class MessagingSocketClient():
@@ -14,10 +14,10 @@ class MessagingSocketClient():
 
     async def start(self):
         await self.connect()
-        self.is_running = True
-        asyncio.create_task(self.run())
+        await self.run()
 
     async def run(self):
+        self.is_running = True
         while self.is_running:
             await self.read()
 
@@ -35,6 +35,5 @@ class MessagingSocketClient():
         headers = {key:val for key, val in [header.split(':') for header in headers]}
         content_len = int(headers['Content-Length'])
         content = json.loads(await self.reader.read(content_len))
-
         self.is_reading = False
         self.message_handler(headers, content)
