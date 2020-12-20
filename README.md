@@ -1,2 +1,2 @@
 # bugged
-Client adapter for debug adapter protocol (DAP)
+Python implementation for client side of debug adapter protocol (DAP)
