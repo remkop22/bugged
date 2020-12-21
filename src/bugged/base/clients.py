@@ -1,5 +1,6 @@
 from typing import List, Literal, Optional
-from bugged.dap.types import SourceBreakpoint, Thread
+from bugged.dap.types import Source, SourceBreakpoint, Thread
+from abc import ABC, abstractmethod
 
 class Process:
 
@@ -26,7 +27,7 @@ class Process:
             if res:
                 return res
 
-class ClientBase:
+class ClientBase(ABC):
 
     def __init__(self, clientID: str, clientName: str, locale: str):
 
@@ -46,10 +47,14 @@ class ClientBase:
         }
 
         self.breakpoints:List[SourceBreakpoint] = []
+        self.sources: List[Source] = []
         self.process: Optional[Process] = None
         self.focussed_thread_id: Optional[int] = None
         self.focussed_frame_id: Optional[int] = None
         self.adapter: Optional['AdapterBase'] = None
+
+    def add_source(self):
+        source = Source()
 
     @property
     def focussed_thread(self):
@@ -65,18 +70,55 @@ class ClientBase:
     def scopes(self):
         return self.focussed_stackframe.scopes
 
+    @abstractmethod
     def update_scopes(self):
-        print("scopes", [str(scope) for scope in self.scopes])
+        '''Gets called on changes to scopes'''
+        pass
 
+    @abstractmethod
     def update_stacks(self):
-        print("focussed frame: ", self.focussed_stackframe)
+        '''Gets called on changes to stacks'''
+        pass
 
+    @abstractmethod
     def update_variables(self):
-        print('variables')
+        '''Gets called on changes to variables'''
+        pass
 
+    @abstractmethod
     def update_threads(self):
-        print("focussed thread: ", self.focussed_thread)
+        '''Gets called on changes to threads'''
+        pass
 
+    @abstractmethod
+    def stopped(self):
+        '''Gets called when debugger sents "stopped" event'''
+        pass
+
+    @abstractmethod
+    def continued(self):
+        '''Gets called when debugger sents "continued" event'''
+        pass
+
+    @abstractmethod
+    def started(self):
+        '''Gets called when debugger responds to launch/attach request'''
+        pass
+
+    @abstractmethod
+    def terminated(self):
+        '''Gets called when debugger sents "terminated" event'''
+        pass
+
+    @abstractmethod
+    def initialize(self):
+        '''Gets called when the debugger responds the to the initialize request (requires the client to call attach/launch in order to proceed)'''
+        pass
+
+    @abstractmethod
+    def configure(self):
+        '''Gets called when debugger sents "initialize" event, adapter will use the state of the client when this function returns to configure the debugger'''
+        pass
 
 class DebugClientBase:
 

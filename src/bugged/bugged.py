@@ -11,8 +11,7 @@ class BuggedAdapter(AdapterBase):
         super().__init__(address, 'bugged', client)
         self.initialized = False
         self.configured = False
-        self.start_mode = self.attach
-        self.request_all_scopes = True
+        self.stopped = False
 
     def initialize(self):
         def handle_init(message):
@@ -31,10 +30,12 @@ class BuggedAdapter(AdapterBase):
     def configure(self):
         # put configuration (breakpoints etc...) here
         # than call cofiguration done, or alternatively register it as a callback for last req
-        self.send(Request('configurationDone'), lambda msg: print('started!'))
+        self.send(Request('configurationDone'), lambda msg: print('started!'), self.raise_message)
 
     def continue_debug(self):
-        self.socket_client.send(Request('continue'))
+        def handle_continue(msg):
+            self.stopped = False
+        self.send(Request('continue'), handle_continue, self.raise_message)
 
     def request_threads(self):
         def thread_handler(msg):
@@ -69,6 +70,10 @@ class BuggedAdapter(AdapterBase):
 
         self.send(Request('variables', arguments={"variablesReference": variables_reference}), variable_handler, self.raise_message)
 
+
+    def send_breakpoints(self):
+        pass
+
     @MessageHandler.request(propogate=True)
     def handle_request(self, message):
         print(message)
@@ -91,6 +96,7 @@ class BuggedAdapter(AdapterBase):
     @MessageHandler.event('stopped')
     def handle_stop(self, message):
         print("debugger stopped")
+        self.client.stopped = False
         self.client.focussed_thread_id =  message['body']['threadId']
         self.request_threads()
 
@@ -106,9 +112,3 @@ class BuggedAdapter(AdapterBase):
 
     def raise_message(self, message):
         raise Exception(message['message'])
-
-if __name__ == '__main__':
-    client = ClientBase('vim-bugger', 'vim-bugged', 'en-US')
-    adapter = BuggedAdapter(('localhost', 5678), client)
-    adapter.start()
-    adapter.initialize()
