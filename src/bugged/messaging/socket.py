@@ -38,4 +38,4 @@ class MessagingSocketClient():
         content_len = int(headers['Content-Length'])
         content = json.loads(await self.reader.read(content_len))
         self.is_reading = False
-        self.message_handler(headers, content)
+        self.message_handler(content)

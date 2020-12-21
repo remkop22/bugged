@@ -13,7 +13,8 @@ class Message:
         return {key: val for key, val in self.__dict__.items() if val is not None}
 
     @staticmethod
-    def from_dict(msg) -> 'Message':
+    def from_dict(msg) -> 'ProtocolMessage':
+        print(msg)
         if msg['type'] == 'request':
             return Request(**msg)
         elif msg['type'] == 'response':

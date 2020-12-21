@@ -1,4 +1,5 @@
 from typing import List, Literal, Optional
+from bugged.dap.messages import Event, Response
 from bugged.dap.types import Source, SourceBreakpoint, Thread
 from abc import ABC, abstractmethod
 
@@ -91,33 +92,33 @@ class ClientBase(ABC):
         pass
 
     @abstractmethod
-    def stopped(self):
+    def stopped(self, event: Event):
         '''Gets called when debugger sents "stopped" event'''
         pass
 
     @abstractmethod
-    def continued(self):
+    def continued(self, event: Event):
         '''Gets called when debugger sents "continued" event'''
         pass
 
     @abstractmethod
-    def started(self):
+    def started(self, res: Response):
         '''Gets called when debugger responds to launch/attach request'''
         pass
 
     @abstractmethod
-    def terminated(self):
+    def terminated(self, event: Event):
         '''Gets called when debugger sents "terminated" event'''
         pass
 
     @abstractmethod
-    def initialize(self):
+    def initialize(self, res: Response):
         '''Gets called when the debugger responds the to the initialize request (requires the client to call attach/launch in order to proceed)'''
         pass
 
     @abstractmethod
-    def configure(self):
-        '''Gets called when debugger sents "initialize" event, adapter will use the state of the client when this function returns to configure the debugger'''
+    def configure(self, event: Event):
+        '''Gets called when debugger sents "initialized" event, adapter will use the state of the client when this function returns to configure the debugger'''
         pass
 
 class DebugClientBase:

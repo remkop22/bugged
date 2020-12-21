@@ -14,6 +14,6 @@ if __name__ == '__main__':
 
     client = GenericClient()
     adapter = BuggedAdapter((arguments['host'], int(arguments['port'])), client)
-    adapter.connect()
+    adapter.start()
     adapter.initialize()
 

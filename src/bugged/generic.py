@@ -1,4 +1,5 @@
 from bugged.base import ClientBase
+from bugged.dap.messages import Event, Response
 
 class GenericClient(ClientBase):
 
@@ -19,14 +20,20 @@ class GenericClient(ClientBase):
     def update_variables(self):
         pass
 
-    def started(self):
+    def started(self, res: Response):
         pass
 
-    def stopped(self):
+    def stopped(self, event: Event):
+        print('stopped')
+
+    def continued(self, event: Event):
         pass
 
-    def continued(self):
+    def terminated(self, event: Event):
         pass
 
-    def terminated(self):
+    def initialize(self, res: Response):
+        self.adapter.attach()
+
+    def configure(self, event: Event):
         pass
