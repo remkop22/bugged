@@ -5,6 +5,10 @@ from typing import Tuple
 from bugged.dap.messages import InitializeRequest, Request, Response
 from bugged.dap.types import Scope, StackFrame, Thread
 
+class DebugAdapterException(Exception):
+
+    pass
+
 class BuggedAdapter(AdapterBase):
 
     def __init__(self, address: Tuple[str, int],  client: ClientBase):
@@ -17,24 +21,24 @@ class BuggedAdapter(AdapterBase):
         def handle_init(message):
             #print(Response(**message).__dict__)
             #TODO handle cababilities defined in this response
-            self.start_mode()
+            self.client.initialized()
 
         self.send(InitializeRequest(self), handle_init, self.raise_message)
 
     def attach(self):
-        self.send(Request('attach', {"test": ""}), error_callback=self.raise_message)
+        self.send(Request('attach', {"test": ""}), self.client.started, self.raise_message)
 
     def launch(self):
-        self.send(Request('launch'), error_callback=self.raise_message)
+        self.send(Request('launch'), self.client.started, self.raise_message)
 
-    def configure(self):
-        # put configuration (breakpoints etc...) here
-        # than call cofiguration done, or alternatively register it as a callback for last req
-        self.send(Request('configurationDone'), lambda msg: print('started!'), self.raise_message)
+    def send_configuration(self):
+        #TODO: send breakpoints to debugger
+        self.send(Request('configurationDone'), error_callback=self.raise_message)
 
     def continue_debug(self):
         def handle_continue(msg):
             self.stopped = False
+            self.client.continued()
         self.send(Request('continue'), handle_continue, self.raise_message)
 
     def request_threads(self):
@@ -81,17 +85,16 @@ class BuggedAdapter(AdapterBase):
     @MessageHandler.response(propogate=True)
     def handle_response(self, message):
         pass
-        #print(message)
 
     @MessageHandler.event(propogate=True)
     def handle_event(self, message):
         pass
-        # print(message)
 
     @MessageHandler.event('initialized')
     def handle_init_event(self, message):
         self.initialized = True
-        self.configure()
+        self.client.configure()
+        self.send_configuration()
 
     @MessageHandler.event('stopped')
     def handle_stop(self, message):
@@ -99,6 +102,7 @@ class BuggedAdapter(AdapterBase):
         self.client.stopped = False
         self.client.focussed_thread_id =  message['body']['threadId']
         self.request_threads()
+        self.client.stopped()
 
     @MessageHandler.event('process')
     def handle_process(self, message):
@@ -111,4 +115,4 @@ class BuggedAdapter(AdapterBase):
         pass
 
     def raise_message(self, message):
-        raise Exception(message['message'])
+        raise DebugAdapterException(message['message'])
